@@ -10,7 +10,7 @@ h11==0.14.0
 huggingface-hub==0.11.1
 idna==3.4
 importlib-metadata==6.0.0
-numpy==1.24.1
+numpy
 nvidia-cublas-cu11==11.10.3.66
 nvidia-cuda-nvrtc-cu11==11.7.99
 nvidia-cuda-runtime-cu11==11.7.99
