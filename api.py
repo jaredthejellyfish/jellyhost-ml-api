@@ -35,7 +35,7 @@ async def generate(prompt: str, inference_steps: int = 50, guideance_scale: floa
 @app.post("/upscale")
 def image_filter(image: UploadFile = File(...), upscaler: str = "edsr", scale: int = 2):
 
-    upscaler_f_name = upscaler + "_" + str(scale) + ".pb"
+    upscaler_f_name = f"models/{upscaler}_{scale}.pb"
 
     original_image = Image.open(image.file)
 
