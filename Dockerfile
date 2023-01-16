@@ -1,6 +1,6 @@
 FROM pytorch/pytorch:1.12.1-cuda11.3-cudnn8-runtime
 
-ARG DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND=noninteractive.
 
 WORKDIR /bot
 COPY . /bot/
