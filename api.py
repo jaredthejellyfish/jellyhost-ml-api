@@ -1,12 +1,13 @@
-from io import BytesIO
-from fastapi import FastAPI, File, UploadFile
-import torch
-from diffusers import StableDiffusionPipeline
-from fastapi import FastAPI, UploadFile
-from fastapi.responses import StreamingResponse
 import cv2
+import torch
 import numpy as np
 from PIL import Image
+from io import BytesIO
+from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, File, UploadFile
+from diffusers import StableDiffusionPipeline
+from fastapi.responses import StreamingResponse
+
 
 app = FastAPI()
 
