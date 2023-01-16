@@ -5,7 +5,7 @@ COPY . /bot/
 
 RUN pip install -r requirements.txt
 
-RUN apt update && apt install -y git curl libgl1-mesa-glx libgl1-mesa-dri && pip install --upgrade git+https://github.com/huggingface/diffusers.git
+RUN apt update && apt install -y git curl python3-opencv && pip install --upgrade git+https://github.com/huggingface/diffusers.git
 
 EXPOSE 9568
 
