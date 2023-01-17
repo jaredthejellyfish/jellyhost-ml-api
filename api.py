@@ -12,8 +12,8 @@ from fastapi.responses import StreamingResponse
 app = FastAPI()
 
 pipe = StableDiffusionPipeline.from_pretrained(
-    "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16)
-pipe = pipe.to("cuda")
+    "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16).to("cuda")
+pipe.requires_safety_checker = False
 
 
 @app.get("/")
@@ -22,9 +22,15 @@ async def root():
 
 
 @app.get("/generate")
-async def generate(prompt: str, inference_steps: int = 50, guideance_scale: float = 7.5, negative_prompt: str = None, height: int = 568, width: int = 568):
-    image = pipe(prompt, num_inference_steps=inference_steps, guidance_scale=guideance_scale, negative_prompt=negative_prompt,
-                 height=height, width=width).images[0]
+async def generate(prompt: str, inference_steps: int = 50, guideance_scale: float = 7.5, negative_prompt: str = None, height: int = 568, width: int = 568, seed=None):
+    if seed:
+        seed = int(seed)
+        generator = torch.Generator(device="cuda").manual_seed(seed)
+        image = pipe(prompt, num_inference_steps=inference_steps, guidance_scale=guideance_scale, negative_prompt=negative_prompt,
+                     height=height, width=width, generator=generator).images[0]
+    else:
+        image = pipe(prompt, num_inference_steps=inference_steps, guidance_scale=guideance_scale, negative_prompt=negative_prompt,
+                     height=height, width=width).images[0]
 
     hires_img = BytesIO()
     image.save(hires_img, "PNG")
