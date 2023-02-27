@@ -7,7 +7,7 @@ from fastapi import FastAPI, UploadFile
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import StreamingResponse
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline
-
+from urllib.parse import unquote
 from fastapi import Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -35,6 +35,11 @@ async def generate(prompt: str, inference_steps: int = 50, guideance_scale: floa
         "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16).to("cuda")
     pipe.requires_safety_checker = False
 
+    prompt = unquote(prompt)
+
+    if negative_prompt:
+        negative_prompt = unquote(negative_prompt)
+
     if seed:
         seed = int(seed)
         generator = torch.Generator(device="cuda").manual_seed(seed)
@@ -57,8 +62,6 @@ async def generate(prompt: str, inference_steps: int = 50, guideance_scale: floa
 
 @app.post("/upscale")
 async def upscale(image: UploadFile = File(...), upscaler: str = "edsr", scale: int = 2):
-    print(image)
-
     upscaler_f_name = f"models/{upscaler}_{scale}.pb"
 
     original_image = Image.open(image.file)
@@ -84,6 +87,11 @@ async def upscale(image: UploadFile = File(...), upscaler: str = "edsr", scale: 
 async def img2img(image: UploadFile = File(...), prompt: str = "", strength: float = 0.8, num_inference_steps: int = 50, guidance_scale: float = 7.5, negative_prompt: str = None):
     pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
         "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16).to("cuda")
+
+    prompt = unquote(prompt)
+
+    if negative_prompt:
+        negative_prompt = unquote(negative_prompt)
 
     original_image = Image.open(image.file).convert("RGB")
     original_image.thumbnail((720, 720), Image.ANTIALIAS)
