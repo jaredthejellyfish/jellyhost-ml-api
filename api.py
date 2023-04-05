@@ -18,11 +18,18 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"response": "Hello, welcome to this machine learning API!"}
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=jsonable_encoder(
+            {"response": "Hello, welcome to this machine learning API!"}
+        ),
+    )
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=jsonable_encoder({"detail": exc.errors(), "body": exc.body}),
@@ -30,9 +37,18 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 @app.get("/generate")
-async def generate(prompt: str, inference_steps: int = 50, guideance_scale: float = 7.5, negative_prompt: str = None, height: int = 568, width: int = 568, seed: int = None):
+async def generate(
+    prompt: str,
+    inference_steps: int = 50,
+    guideance_scale: float = 7.5,
+    negative_prompt: str = None,
+    height: int = 568,
+    width: int = 568,
+    seed: int = None,
+) -> StreamingResponse:
     pipe = StableDiffusionPipeline.from_pretrained(
-        "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16).to("cuda")
+        "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
+    ).to("cuda")
     pipe.requires_safety_checker = False
 
     prompt = unquote(prompt)
@@ -43,11 +59,24 @@ async def generate(prompt: str, inference_steps: int = 50, guideance_scale: floa
     if seed:
         seed = int(seed)
         generator = torch.Generator(device="cuda").manual_seed(seed)
-        image = pipe(prompt, num_inference_steps=inference_steps, guidance_scale=guideance_scale, negative_prompt=negative_prompt,
-                     height=height, width=width, generator=generator).images[0]
+        image = pipe(
+            prompt,
+            num_inference_steps=inference_steps,
+            guidance_scale=guideance_scale,
+            negative_prompt=negative_prompt,
+            height=height,
+            width=width,
+            generator=generator,
+        ).images[0]
     else:
-        image = pipe(prompt, num_inference_steps=inference_steps, guidance_scale=guideance_scale, negative_prompt=negative_prompt,
-                     height=height, width=width).images[0]
+        image = pipe(
+            prompt,
+            num_inference_steps=inference_steps,
+            guidance_scale=guideance_scale,
+            negative_prompt=negative_prompt,
+            height=height,
+            width=width,
+        ).images[0]
 
     del pipe
 
@@ -61,7 +90,9 @@ async def generate(prompt: str, inference_steps: int = 50, guideance_scale: floa
 
 
 @app.post("/upscale")
-async def upscale(image: UploadFile = File(...), upscaler: str = "edsr", scale: int = 2):
+async def upscale(
+    image: UploadFile = File(...), upscaler: str = "edsr", scale: int = 2
+) -> StreamingResponse:
     upscaler_f_name = f"models/{upscaler}_{scale}.pb"
 
     original_image = Image.open(image.file)
@@ -84,9 +115,17 @@ async def upscale(image: UploadFile = File(...), upscaler: str = "edsr", scale: 
 
 
 @app.post("/img2img")
-async def img2img(image: UploadFile = File(...), prompt: str = "", strength: float = 0.8, num_inference_steps: int = 50, guidance_scale: float = 7.5, negative_prompt: str = None):
+async def img2img(
+    image: UploadFile = File(...),
+    prompt: str = "",
+    strength: float = 0.8,
+    num_inference_steps: int = 50,
+    guidance_scale: float = 7.5,
+    negative_prompt: str = None,
+) -> StreamingResponse:
     pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
-        "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16).to("cuda")
+        "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
+    ).to("cuda")
 
     prompt = unquote(prompt)
 
@@ -96,8 +135,14 @@ async def img2img(image: UploadFile = File(...), prompt: str = "", strength: flo
     original_image = Image.open(image.file).convert("RGB")
     original_image.thumbnail((720, 720), Image.ANTIALIAS)
 
-    image = pipe(prompt=prompt, image=original_image, strength=strength, guidance_scale=guidance_scale,
-                 num_inference_steps=num_inference_steps, negative_prompt=negative_prompt).images[0]
+    image = pipe(
+        prompt=prompt,
+        image=original_image,
+        strength=strength,
+        guidance_scale=guidance_scale,
+        num_inference_steps=num_inference_steps,
+        negative_prompt=negative_prompt,
+    ).images[0]
 
     final_img = BytesIO()
     image.save(final_img, "PNG")
